@@ -64,7 +64,7 @@ pub fn main() !void {
     var prev_btn_value: zgpiod.LineValue = .Inactive;
     std.debug.print("press \"q\" to quit\n", .{});
     while (true) {
-        const read_in = try stdin.read(&input_buf) catch 0;
+        const read_in = stdin.read(&input_buf) catch 0;
         if (read_in > 0 and input_buf[0] == 'q') {
             break;
         }
