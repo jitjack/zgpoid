@@ -61,14 +61,15 @@ pub fn main() !void {
     var input_buf: [1]u8 = undefined;
 
     var btn_value: zgpiod.LineValue = .Inactive;
+    var prev_btn_value: zgpiod.LineValue = .Inactive;
     std.debug.print("press \"q\" to quit\n", .{});
     while (true) {
-        const read_in = try stdin.read(&input_buf);
+        const read_in = try stdin.read(&input_buf) catch 0;
         if (read_in > 0 and input_buf[0] == 'q') {
             break;
         }
         btn_value = btn_line.getValue(BTN_GPIO);
-        if (btn_value == .Active) {
+        if (btn_value == .Active and prev_btn_value == .Inactive) {
             const led_value = led_line.getValue(LED_GPIO);
             switch (led_value) {
                 .Inactive => {
@@ -82,5 +83,7 @@ pub fn main() !void {
                 },
             }
         }
+        prev_btn_value = btn_value;
+        std.time.sleep(std.time.ns_per_ms * 10);
     }
 }
