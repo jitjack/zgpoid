@@ -4,6 +4,12 @@ const zgpiod = @import("zgpiod");
 const LED_GPIO: c_uint = 17;
 const BTN_GPIO: c_uint = 27;
 pub fn main() !void {
+    const stdin_file = std.io.getStdIn();
+    const flags: usize = std.os.linux.fcntl(stdin_file.handle, std.os.linux.F.GETFL, 0);
+    const O_NONBLOCK: usize = 0x800;
+    _ = std.os.linux.fcntl(stdin_file.handle, std.os.linux.F.SETFL, flags | O_NONBLOCK);
+    const stdin = stdin_file.reader();
+
     var chip = try zgpiod.Chip.init("/dev/gpiochip0");
     defer chip.deinit();
 
@@ -52,20 +58,15 @@ pub fn main() !void {
     var btn_line = try chip.getLineRequest(btn_request_config, btn_line_config);
     defer btn_line.deinit();
 
-    const stdin = std.io.getStdIn().reader();
     var input_buf: [1]u8 = undefined;
 
     var btn_value: zgpiod.LineValue = .Inactive;
     std.debug.print("press \"q\" to quit\n", .{});
     while (true) {
-        const read_in = try stdin.readAll(&input_buf);
-
-        if (read_in > 0) {
-            if (input_buf[0] == 'q') {
-                break;
-            }
+        const read_in = try stdin.read(&input_buf);
+        if (read_in > 0 and input_buf[0] == 'q') {
+            break;
         }
-
         btn_value = btn_line.getValue(BTN_GPIO);
         if (btn_value == .Active) {
             const led_value = led_line.getValue(LED_GPIO);
