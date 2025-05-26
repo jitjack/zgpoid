@@ -1,5 +1,10 @@
 const std = @import("std");
 
+//TODO:
+// -- rethink the use of std.heap.c_allocator
+// -- D-BUS interface???
+// -- Implement a cli versions of gpiodetect, etc? https://libgpiod.readthedocs.io/en/latest/gpio_tools.html
+
 const c = @cImport({
     @cInclude("string.h");
     @cInclude("errno.h");
@@ -969,7 +974,6 @@ test "Mock EdgeEventBuffer" {
     // We can't create a real EdgeEventBuffer without hardware,
     // but we can test that the struct and methods are correctly defined
 
-    // First verify that EdgeEvent constants are correct
     try std.testing.expectEqual(@intFromEnum(LineEdgeDetection.None), gpoid.GPIOD_LINE_EDGE_NONE);
     try std.testing.expectEqual(@intFromEnum(LineEdgeDetection.Rising), gpoid.GPIOD_LINE_EDGE_RISING);
     try std.testing.expectEqual(@intFromEnum(LineEdgeDetection.Falling), gpoid.GPIOD_LINE_EDGE_FALLING);
