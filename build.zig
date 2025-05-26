@@ -71,17 +71,14 @@ fn buildExamples(
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
 ) void {
-    // Create a step for building all examples
     const examples_step = b.step("examples", "Build all examples");
 
-    // Try to open the examples directory
     var examples_dir = std.fs.cwd().openDir("src/examples", .{ .iterate = true }) catch |err| {
         std.debug.print("Could not open examples directory: {}\n", .{err});
         return;
     };
     defer examples_dir.close();
 
-    // Iterate through all files in the examples directory
     var it = examples_dir.iterate();
     while (it.next() catch |err| {
         std.debug.print("Error iterating examples directory: {}\n", .{err});
@@ -92,14 +89,12 @@ fn buildExamples(
             continue;
         }
 
-        // Get the example name (filename without .zig extension)
         const example_name = entry.name[0 .. entry.name.len - 4];
         var buffer: [1028]u8 = .{0} ** 1028;
         const f_name = std.fmt.bufPrintZ(&buffer, "src/examples/{s}", .{entry.name}) catch |err| {
             std.log.err("bad buf: {}\n", .{err});
             return;
         };
-        // Create a new executable for this example
         const example = b.addExecutable(.{
             .name = example_name,
             .root_source_file = b.path(buffer[0..f_name.len :0]),
@@ -107,29 +102,23 @@ fn buildExamples(
             .optimize = optimize,
         });
 
-        // Add import path for the zgpiod library
         example.root_module.addImport("zgpiod", zgpiod_lib.root_module);
 
-        // Link against the libraries
         example.linkLibrary(zgpiod_lib);
         example.linkLibrary(gpiod_lib);
         example.linkLibC();
 
-        // Install the executable
         b.installArtifact(example);
 
-        // Add a run step for this example
         const run_example = b.addRunArtifact(example);
         run_example.step.dependOn(b.getInstallStep());
 
-        // Add a step to run this specific example
         var buf2: [1028]u8 = .{0} ** 1028;
         const run_name = std.fmt.bufPrintZ(&buffer, "run-{s}", .{example_name}) catch "run-???";
         const run_desc = std.fmt.bufPrintZ(&buf2, "Run the {s} example", .{example_name}) catch "run desc ???";
         const run_step = b.step(buffer[0..run_name.len :0], buf2[0..run_desc.len :0]);
         run_step.dependOn(&run_example.step);
 
-        // Make the examples step depend on building this example
         examples_step.dependOn(&example.step);
     }
 }
